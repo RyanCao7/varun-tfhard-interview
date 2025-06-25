@@ -21,6 +21,11 @@ use shared_types::Field;
 /// As a second hint, we give as fact the following relationship (please
 /// justify on your own!):
 /// f(r_1, b_2, ..., b_n) = (1 - r_1) * f(0, b_2, ..., b_n) + r_1 * f(1, b_2, ..., b_n)
+/// 
+/// RHS is clearly multilinear since f(0, b_2, ..., b_n) and f(1, b_2, ..., b_n) are
+/// multilinear. RHS can be thought of as a multilinear polynomial f'(r_1,x). Now to 
+/// prove f'==f we know that f and f' agree on {0,1}^n, thus f and f' must be equivalent
+
 #[derive(Clone)]
 pub struct MultilinearExtension<F> {
     bookkeping_table: Vec<F>,
@@ -56,5 +61,24 @@ impl<F: Field> MultilinearExtension<F> {
             // `idx`-th position is stored explicitly in `self.f`
             Some(self.bookkeping_table[idx])
         }
+    }
+
+         /// Return the table
+    pub fn table(&self) -> &[F] {
+        &self.bookkeping_table
+    }
+
+
+    /// Restrict the first variable and update table in place
+    pub fn restrict_first_var(table: &mut Vec<F>, r: F) {
+        if table.len() == 1 { return; }
+        let half = table.len() / 2;
+        for i in 0..half {
+            // Use fact f(r_1, b_2, ..., b_n) = (1 - r_1) * f(0, b_2, ..., b_n) + r_1 * f(1, b_2, ..., b_n)
+            let l = table[i];
+            let h = table[i + half];
+            table[i] = (F::ONE - r) * l + r * h;
+        }
+        table.truncate(half);
     }
 }
