@@ -168,7 +168,7 @@ fn sumcheck_prove<F: Field>(
             .map(|(t, &v)| (t, v))
             .collect();
 
-        // Compute evaluations of g_i.
+        // Compute evaluations of g_i. 
         let evals = eval_round_univariate::<F>(const_prod, &active_factors, num_remaining_vars);
         transcript.absorb_elements(&evals);
         prover_msgs.push(UnivariateEvals::new(evals.clone()));
@@ -176,13 +176,14 @@ fn sumcheck_prove<F: Field>(
         // Get verifier challenge r_i and update tables.
         let r_i = transcript.squeeze();
 
+        let prev_vars_left = vars_left.clone();
+
         // Update every active table
         restrict_all_active_tables::<F>(&mut tables, &mut vars_left, r_i);
 
-
-        // Update the constant factors from "inactive" tables
-        for (tab, &v) in tables.iter().zip(&vars_left) {
-            if v == 0 {                   
+        // Update the constant factors from tables that became inactive in this round
+        for ((tab, v), prev_v) in tables.iter().zip(&vars_left).zip(prev_vars_left.iter()) {
+            if *prev_v > 0 && *v == 0 {
                 const_prod *= tab[0];
             }
         }
